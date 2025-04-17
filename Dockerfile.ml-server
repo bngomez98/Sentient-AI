@@ -1,0 +1,36 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libffi-dev \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install PyTorch with CUDA support
+RUN pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118
+
+# Install TensorFlow
+RUN pip install tensorflow
+
+# Install other dependencies
+COPY scripts/requirements.txt .
+RUN pip install -r requirements.txt
+
+# Install transformers
+RUN pip install transformers
+
+# Copy ML server code
+COPY scripts/ml_server.py .
+
+# Create model directories
+RUN mkdir -p models/tensorflow models/pytorch
+
+# Expose port
+EXPOSE 5000
+
+# Run the ML server
+CMD ["python", "ml_server.py"]
+

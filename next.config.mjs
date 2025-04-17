@@ -7,6 +7,10 @@ try {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
+  env: {
+    NEXT_PUBLIC_MODEL_NAME: process.env.OPENAI_MODEL || 'GPT-4o',
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -46,3 +50,4 @@ function mergeConfig(nextConfig, userConfig) {
 }
 
 export default nextConfig
+

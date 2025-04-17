@@ -1,0 +1,17 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Install dependencies
+COPY scripts/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the VAE service code
+COPY scripts/dialogue_vae_service.py ./scripts/
+COPY scripts/vae_model.pth ./scripts/ 2>/dev/null || :
+
+EXPOSE 8000
+
+# Run the VAE service
+CMD ["python", "scripts/dialogue_vae_service.py"]
+
