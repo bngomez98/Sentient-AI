@@ -169,4 +169,3 @@ class VectorStore {
 
 // Export singleton instance
 export const vectorStore = new VectorStore()
-

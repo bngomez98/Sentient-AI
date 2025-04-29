@@ -89,4 +89,3 @@ export class LangChainService {
 
 // Export singleton instance
 export const langchain = new LangChainService()
-

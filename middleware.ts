@@ -4,8 +4,11 @@ import type { NextRequest } from "next/server"
 // Paths that should bypass middleware processing
 const PUBLIC_PATHS = ["/api/status", "/api/health", "/_next", "/favicon.ico", "/static"]
 
-// API paths that require authentication
+// API paths that require authentication (if you implement auth later)
 const PROTECTED_API_PATHS = ["/api/admin", "/api/user"]
+
+// JavaScript file extensions that need proper MIME types
+const JS_EXTENSIONS = [".js", ".mjs", ".jsx", ".ts", ".tsx"]
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -22,30 +25,8 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set("x-request-id", requestId)
 
-  // Check authentication for protected API paths
-  if (PROTECTED_API_PATHS.some((path) => pathname.startsWith(path))) {
-    const authHeader = request.headers.get("authorization")
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "content-type": "application/json" },
-      })
-    }
-
-    // Here you would validate the token
-    // For now, we'll just check if it exists
-    const token = authHeader.split(" ")[1]
-    if (!token) {
-      return new NextResponse(JSON.stringify({ error: "Invalid token" }), {
-        status: 401,
-        headers: { "content-type": "application/json" },
-      })
-    }
-
-    // Add user info to headers if token is valid
-    requestHeaders.set("x-user-id", "authenticated-user")
-  }
+  // Add timestamp for performance tracking
+  requestHeaders.set("x-request-time", Date.now().toString())
 
   // For API routes, add CORS headers
   if (pathname.startsWith("/api/")) {
@@ -59,6 +40,19 @@ export async function middleware(request: NextRequest) {
     response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
     response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
+    return response
+  }
+
+  // Check if the request is for a JavaScript file and set the proper MIME type
+  const fileExtension = pathname.substring(pathname.lastIndexOf("."))
+  if (JS_EXTENSIONS.includes(fileExtension)) {
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
+
+    response.headers.set("Content-Type", "application/javascript; charset=utf-8")
     return response
   }
 
@@ -77,6 +71,7 @@ export const config = {
     "/api/:path*",
     // Apply to all pages except static assets
     "/((?!_next/static|_next/image|favicon.ico).*)",
+    // Apply to JavaScript files
+    "/:path*\\.(js|mjs|jsx|ts|tsx)",
   ],
 }
-

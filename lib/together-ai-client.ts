@@ -196,4 +196,3 @@ class TogetherAIClient {
 }
 
 export const togetherAIClient = new TogetherAIClient()
-

@@ -30,4 +30,3 @@ EXPOSE 8080
 
 # Start the file processing service
 CMD ["node", "lib/file-processor-service.js"]
-

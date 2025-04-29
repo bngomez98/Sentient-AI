@@ -22,4 +22,3 @@ An advanced neural-symbolic AI assistant with contextual understanding and reaso
    ```bash
    git clone https://github.com/yourusername/sentient-ai.git
    cd sentient-ai
-

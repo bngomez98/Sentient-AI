@@ -83,4 +83,3 @@ export function ReasoningVisualizer({ steps = [] }: ReasoningVisualizerProps) {
     </div>
   )
 }
-

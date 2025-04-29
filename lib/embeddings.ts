@@ -156,4 +156,3 @@ class EmbeddingService {
 
 // Export singleton instance
 export const embeddingService = new EmbeddingService()
-

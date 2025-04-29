@@ -140,4 +140,3 @@ export async function retrieveRelevantDocuments(query: string, topK: number = EN
     return []
   }
 }
-

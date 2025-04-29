@@ -162,4 +162,3 @@ class RagRetrievalService {
 
 // Export singleton instance
 export const ragRetrieval = new RagRetrievalService()
-

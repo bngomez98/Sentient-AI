@@ -122,4 +122,3 @@ class DialogueVAEService {
 
 // Export singleton instance
 export const dialogueVAEService = new DialogueVAEService()
-

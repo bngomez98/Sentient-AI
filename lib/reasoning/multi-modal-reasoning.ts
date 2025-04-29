@@ -364,4 +364,3 @@ class MultiModalReasoningService {
 
 // Export singleton instance
 export const multiModalReasoning = new MultiModalReasoningService()
-

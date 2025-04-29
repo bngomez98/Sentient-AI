@@ -429,4 +429,3 @@ export class TensorflowClient {
 
 // Export singleton instance
 export const tensorflowClient = new TensorflowClient()
-

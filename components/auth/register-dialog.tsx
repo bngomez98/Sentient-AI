@@ -115,4 +115,3 @@ export function RegisterDialog({ isOpen, onClose, onSwitchToLogin }: RegisterDia
     </Dialog>
   )
 }
-

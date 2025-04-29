@@ -150,4 +150,3 @@ Provide only the numerical score.
 
 // Export singleton instance
 export const sentimentAnalysis = new SentimentAnalysisService()
-

@@ -849,4 +849,3 @@ function synthesizeFinalThought(steps: ReasoningStep[]): string {
     return "Will provide a clear, informative response based on the query analysis."
   }
 }
-

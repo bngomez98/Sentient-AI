@@ -14,4 +14,3 @@ EXPOSE 8000
 
 # Run the VAE service
 CMD ["python", "scripts/dialogue_vae_service.py"]
-

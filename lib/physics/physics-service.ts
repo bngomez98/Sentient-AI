@@ -683,4 +683,3 @@ class PhysicsService {
 
 // Export singleton instance
 export const physicsService = new PhysicsService()
-

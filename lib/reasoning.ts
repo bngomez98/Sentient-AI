@@ -414,4 +414,3 @@ function determineResponseStrategy(input: string, history: any[], complexityScor
 
   return strategy
 }
-

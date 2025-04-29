@@ -119,4 +119,3 @@ class LocalKnowledgeRetrieval {
 }
 
 export const localKnowledgeRetrieval = new LocalKnowledgeRetrieval()
-

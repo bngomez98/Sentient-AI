@@ -140,4 +140,3 @@ class LocalResponseGenerator {
 
 // Export singleton instance
 export const localResponseGenerator = new LocalResponseGenerator()
-

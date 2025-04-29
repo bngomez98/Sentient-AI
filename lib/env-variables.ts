@@ -1,34 +1,79 @@
-/**
- * Safely get an environment variable as a boolean
- */
-export function getBoolEnv(key: string, fallback = false): boolean {
-  if (typeof process === "undefined" || typeof process.env === "undefined") {
-    return fallback
-  }
+// Simple environment variables module optimized for serverless functions
 
-  const value = process.env[key]
-  if (value === undefined) {
-    return fallback
-  }
-
-  return value === "true" || value === "1"
-}
-
-/**
- * Safely get an environment variable with a fallback value
- */
+// Helper function to get environment variable with fallback
 export function getEnvValue(key: string, fallback = ""): string {
-  if (typeof process === "undefined" || typeof process.env === "undefined") {
-    return fallback
-  }
-
-  const value = process.env[key]
-  return value !== undefined ? value : fallback
+  return process.env[key] || fallback
 }
 
-/**
- * Format the model name for display
- */
+// Helper function to get boolean environment variable
+export function getBoolEnv(key: string, fallback = "false"): boolean {
+  const value = getEnvValue(key, fallback).toLowerCase()
+  return value === "true" || value === "1" || value === "yes"
+}
+
+// Helper function to get numeric environment variable
+export function getNumEnv(key: string, fallback = 0): number {
+  const value = getEnvValue(key, String(fallback))
+  const num = Number.parseFloat(value)
+  return isNaN(num) ? fallback : num
+}
+
+// Helper function to get array environment variable
+export function getArrayEnv(key: string, fallback: string[] = []): string[] {
+  const value = getEnvValue(key)
+  try {
+    return JSON.parse(value)
+  } catch (error) {
+    return fallback
+  }
+}
+
+// Export ENV object
+export const ENV = {
+  OPENAI_API_KEY: getEnvValue("OPENAI_API_KEY"),
+  PPLX_API_KEY: getEnvValue("PPLX_API_KEY"),
+  HUGGINGFACE_API_TOKEN: getEnvValue("HUGGINGFACE_API_TOKEN"),
+  ENABLE_ETHICAL_FILTERING: getBoolEnv("ENABLE_ETHICAL_FILTERING"),
+  ENABLE_CONTINUOUS_LEARNING: getBoolEnv("ENABLE_CONTINUOUS_LEARNING"),
+  ENABLE_AUTONOMOUS_DEBUGGING: getBoolEnv("ENABLE_AUTONOMOUS_DEBUGGING"),
+  ENABLE_CLIENT_ML: getBoolEnv("ENABLE_CLIENT_ML"),
+  ENABLE_ADVANCED_OCR: getBoolEnv("ENABLE_ADVANCED_OCR"),
+  ENABLE_AUDIO_TRANSCRIPTION: getBoolEnv("ENABLE_AUDIO_TRANSCRIPTION"),
+  ENABLE_RAG_PHYSICS: getBoolEnv("ENABLE_RAG_PHYSICS"),
+  ENABLE_VISION: getBoolEnv("ENABLE_VISION"),
+  ENABLE_AUDIO: getBoolEnv("ENABLE_AUDIO"),
+  ENABLE_LOGGING: getBoolEnv("ENABLE_LOGGING"),
+  RAG_PROVIDER: getEnvValue("RAG_PROVIDER", "local"),
+  RAG_EMBEDDING_MODEL: getEnvValue("RAG_EMBEDDING_MODEL", "openai:text-embedding-3-large"),
+  RAG_CHUNK_SIZE: getNumEnv("RAG_CHUNK_SIZE", 1000),
+  RAG_CHUNK_OVERLAP: getNumEnv("RAG_CHUNK_OVERLAP", 200),
+  RAG_TOP_K: getNumEnv("RAG_TOP_K", 5),
+  VECTOR_DB_URL: getEnvValue("VECTOR_DB_URL"),
+  VECTOR_DB_API_KEY: getEnvValue("VECTOR_DB_API_KEY"),
+  VECTOR_DIMENSIONS: getNumEnv("VECTOR_DIMENSIONS", 1536),
+  VECTOR_INDEX_NAME: getEnvValue("VECTOR_INDEX_NAME", "sentient-knowledge"),
+  DIALOGUE_VAE_ENDPOINT: getEnvValue("DIALOGUE_VAE_ENDPOINT"),
+  CONTEXT_MEMORY_SIZE: getNumEnv("CONTEXT_MEMORY_SIZE", 100),
+  MAX_TOKENS: getNumEnv("MAX_TOKENS", 4000),
+  MAX_FILE_SIZE_MB: getNumEnv("MAX_FILE_SIZE_MB", 50),
+  FILE_PROCESSING_TIMEOUT: getNumEnv("FILE_PROCESSING_TIMEOUT", 30000),
+  FILE_PROCESSING_RETRIES: getNumEnv("FILE_PROCESSING_RETRIES", 2),
+  LOG_LEVEL: getEnvValue("LOG_LEVEL", "info"),
+  TEMPERATURE: getEnvValue("TEMPERATURE", "0.7"),
+  TOP_P: getEnvValue("TOP_P", "0.9"),
+  TOP_K: getNumEnv("TOP_K", 40),
+  FREQUENCY_PENALTY: getNumEnv("FREQUENCY_PENALTY", 0.7),
+  PRESENCE_PENALTY: getNumEnv("PRESENCE_PENALTY", 0.0),
+  OPENAI_MODEL: getEnvValue("OPENAI_MODEL", "gpt-4o"),
+  PPLX_MODEL: getEnvValue("PPLX_MODEL", "sonar"),
+  VISION_MODEL: getEnvValue("VISION_MODEL", "gpt-4o"),
+  AUDIO_MODEL: getEnvValue("AUDIO_MODEL", "whisper-large-v3"),
+  NODE_ENV: getEnvValue("NODE_ENV", "development"),
+  TOGETHER_API_KEY: getEnvValue("TOGETHER_API_KEY"),
+  TOGETHER_MODEL: getEnvValue("TOGETHER_MODEL", "together/Llama-2-7b-chat-hf"),
+}
+
+// Helper function to format the model name
 export function formatModelName(modelName: string | undefined): string {
   if (!modelName) return "AI Assistant"
 
@@ -41,55 +86,3 @@ export function formatModelName(modelName: string | undefined): string {
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ")
 }
-
-export const ENV = {
-  OPENAI_API_KEY: process.env.OPENAI_API_KEY || "",
-  PPLX_API_KEY: process.env.PPLX_API_KEY || "",
-  HUGGINGFACE_API_TOKEN: process.env.HUGGINGFACE_API_TOKEN || "",
-  VERCEL_API_KEY: process.env.VERCEL_API_KEY || "",
-  ENABLE_ETHICAL_FILTERING: process.env.ENABLE_ETHICAL_FILTERING === "true",
-  ENABLE_CONTINUOUS_LEARNING: process.env.ENABLE_CONTINUOUS_LEARNING === "true",
-  ENABLE_AUTONOMOUS_DEBUGGING: process.env.ENABLE_AUTONOMOUS_DEBUGGING === "true",
-  ENABLE_CLIENT_ML: process.env.ENABLE_CLIENT_ML === "true",
-  ENABLE_ADVANCED_OCR: process.env.ENABLE_ADVANCED_OCR === "true",
-  ENABLE_AUDIO_TRANSCRIPTION: process.env.ENABLE_AUDIO_TRANSCRIPTION === "true",
-  ENABLE_RAG_PHYSICS: process.env.ENABLE_RAG_PHYSICS === "true",
-  ENABLE_VISION: process.env.ENABLE_VISION === "true",
-  ENABLE_AUDIO: process.env.ENABLE_AUDIO === "true",
-  ENABLE_LOGGING: process.env.ENABLE_LOGGING === "true",
-  RAG_PROVIDER: process.env.RAG_PROVIDER || "local",
-  RAG_EMBEDDING_MODEL: process.env.RAG_EMBEDDING_MODEL || "openai:text-embedding-3-large",
-  RAG_CHUNK_SIZE: process.env.RAG_CHUNK_SIZE || "1000",
-  RAG_CHUNK_OVERLAP: process.env.RAG_CHUNK_OVERLAP || "200",
-  RAG_TOP_K: Number(process.env.RAG_TOP_K || "5"),
-  VECTOR_DB_URL: process.env.VECTOR_DB_URL || "http://localhost:8000",
-  VECTOR_DB_API_KEY: process.env.VECTOR_DB_API_KEY || "",
-  VECTOR_DIMENSIONS: Number(process.env.VECTOR_DIMENSIONS || "1536"),
-  VECTOR_INDEX_NAME: process.env.VECTOR_INDEX_NAME || "sentient-knowledge",
-  DIALOGUE_VAE_ENDPOINT:
-    process.env.DIALOGUE_VAE_ENDPOINT || "https://api-inference.huggingface.co/models/sentient-labs/dialogue-vae",
-  CONTEXT_MEMORY_SIZE: Number(process.env.CONTEXT_MEMORY_SIZE || "100"),
-  MAX_TOKENS: Number(process.env.MAX_TOKENS || "4000"),
-  MAX_FILE_SIZE_MB: Number(process.env.MAX_FILE_SIZE_MB || "50"),
-  FILE_PROCESSING_TIMEOUT: Number(process.env.FILE_PROCESSING_TIMEOUT || "30000"),
-  FILE_PROCESSING_RETRIES: Number(process.env.FILE_PROCESSING_RETRIES || "2"),
-  LOG_LEVEL: process.env.LOG_LEVEL || "info",
-  TEMPERATURE: Number(process.env.TEMPERATURE || "0.7"),
-  TOP_P: Number(process.env.TOP_P || "0.9"),
-  TOP_K: Number(process.env.TOP_K || "40"),
-  FREQUENCY_PENALTY: Number(process.env.FREQUENCY_PENALTY || "0.7"),
-  PRESENCE_PENALTY: Number(process.env.PRESENCE_PENALTY || "0.0"),
-  OPENAI_MODEL: process.env.OPENAI_MODEL || "gpt-4o",
-  PPLX_MODEL: process.env.PPLX_MODEL || "sonar",
-  VISION_MODEL: process.env.VISION_MODEL || "gpt-4o",
-  AUDIO_MODEL: process.env.AUDIO_MODEL || "whisper-large-v3",
-  PHYSICS_GRAVITY: Number(process.env.PHYSICS_GRAVITY || "9.8"),
-  PHYSICS_TIMESTEP: Number(process.env.PHYSICS_TIMESTEP || "0.01666"),
-  PHYSICS_ITERATIONS: Number(process.env.PHYSICS_ITERATIONS || "10"),
-  PHYSICS_DAMPING: Number(process.env.PHYSICS_DAMPING || "0.1"),
-  PHYSICS_SIMULATION_QUALITY: process.env.PHYSICS_SIMULATION_QUALITY || "medium",
-  NODE_ENV: process.env.NODE_ENV || "development",
-  TOGETHER_API_KEY: process.env.TOGETHER_API_KEY || "",
-  TOGETHER_MODEL: process.env.TOGETHER_MODEL || "mistralai/Mixtral-8x7B-Instruct-v0.1",
-}
-

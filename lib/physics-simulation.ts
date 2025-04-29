@@ -554,4 +554,3 @@ class PhysicsSimulationService {
 
 // Export singleton instance
 export const physicsSimulation = new PhysicsSimulationService()
-

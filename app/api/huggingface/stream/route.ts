@@ -29,6 +29,10 @@ export async function POST(req: NextRequest) {
       logger.warn(`Invalid request format`, { requestId })
       return NextResponse.json(
         {
+          message: {
+            role: "assistant",
+            content: "Invalid request: messages array is required",
+          },
           error: "Invalid request: messages array is required",
         },
         { status: 400 },
@@ -56,21 +60,36 @@ export async function POST(req: NextRequest) {
               if (newContent) {
                 // Encode the content as a JSON event
                 const data = JSON.stringify({ content: newContent })
-                controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`))
+                controller.enqueue(
+                  new TextEncoder().encode(`data: ${data}
+
+`),
+                )
               }
             }
           }
 
           // End the stream
-          controller.enqueue(new TextEncoder().encode(`data: [DONE]\n\n`))
+          controller.enqueue(
+            new TextEncoder().encode(`data: [DONE]
+
+`),
+          )
           controller.close()
         } catch (error) {
           logger.error(`Error in stream generation`, { requestId, error })
           const errorMessage = error instanceof Error ? error.message : "Unknown error"
           const data = JSON.stringify({ error: errorMessage })
-          controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`))
+          controller.enqueue(
+            new TextEncoder().encode(`data: ${data}
+
+`),
+          )
           controller.close()
         }
+      },
+      cancel(reason) {
+        logger.warn(`Stream cancelled`, { requestId, reason })
       },
     })
 
@@ -83,15 +102,21 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (error) {
-    logger.error(`Error processing HuggingFace streaming request`, { requestId, error })
+    logger.error(`Error processing HuggingFace request`, { requestId, error })
 
-    // Return an error response
+    // Ensure we return a valid JSON response even in error cases
     return NextResponse.json(
       {
+        message: {
+          role: "assistant",
+          content:
+            "I apologize, but I encountered an unexpected error while processing your request. Please try again or rephrase your question.",
+        },
+        model: "error-recovery",
         error: error instanceof Error ? error.message : "Unknown error",
+        timestamp: new Date().toISOString(),
       },
       { status: 500 },
     )
   }
 }
-

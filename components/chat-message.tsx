@@ -97,4 +97,3 @@ export function ChatMessage({ message, onShowReasoning, isLast }: ChatMessagePro
     </div>
   )
 }
-

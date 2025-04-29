@@ -3,10 +3,12 @@
 import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
+import { ChatMessage } from "./chat-message"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Send } from "lucide-react"
-import { ChatMessage } from "./chat-message"
+import { Send, AlertCircle } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Loader2 } from "lucide-react"
 
 // Define message type
 interface Message {
@@ -18,6 +20,7 @@ export function HuggingFaceChat() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [apiError, setApiError] = useState<string | null>(null) // Add error state
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -45,6 +48,7 @@ export function HuggingFaceChat() {
     setMessages((prev) => [...prev, userMessage])
     setInput("")
     setIsLoading(true)
+    setApiError(null) // Clear any previous errors
 
     // Create an initial assistant message
     const assistantMessageIndex = messages.length
@@ -66,7 +70,8 @@ export function HuggingFaceChat() {
       })
 
       if (!response.ok) {
-        throw new Error(`API returned ${response.status}`)
+        const errorData = await response.json()
+        throw new Error(`API returned ${response.status}: ${errorData.error || "Unknown error"}`)
       }
 
       if (!response.body) {
@@ -119,12 +124,15 @@ export function HuggingFaceChat() {
               }
             } catch (e) {
               console.error("Error parsing SSE data:", e)
+              setApiError(`Error parsing data: ${e.message}`) // Set error state
+              assistantMessage += `[Error parsing data: ${e.message}]`
             }
           }
         }
       }
     } catch (error) {
       console.error("Error in streaming chat:", error)
+      setApiError(`Failed to get response: ${error.message}`) // Set error state
 
       // Update the assistant message with an error
       setMessages((prev) => {
@@ -167,6 +175,19 @@ export function HuggingFaceChat() {
           messages.map((message, index) => <ChatMessage key={index} message={message} />)
         )}
         <div ref={messagesEndRef} />
+        {apiError && ( // Display error message
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{apiError}</AlertDescription>
+          </Alert>
+        )}
+        {isLoading && ( // Display loading indicator
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <span className="ml-2 text-muted-foreground">Thinking...</span>
+          </div>
+        )}
       </div>
 
       <div className="border-t p-4">
@@ -188,6 +209,5 @@ export function HuggingFaceChat() {
   )
 }
 
-// Add a default export
+// Add a default export for the ChatInterface component
 export default HuggingFaceChat
-

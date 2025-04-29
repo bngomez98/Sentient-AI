@@ -185,4 +185,3 @@ export class ModelManager {
 
 // Export singleton instance
 export const modelManager = new ModelManager()
-

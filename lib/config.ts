@@ -27,4 +27,3 @@ export const config = {
   frequency_penalty: 0.5,
   presence_penalty: 0.5,
 }
-

@@ -211,4 +211,3 @@ export function FileUpload({ onFilesProcessed, maxFiles = 5, maxSizeMB = 50, acc
     </div>
   )
 }
-

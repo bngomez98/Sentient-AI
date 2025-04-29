@@ -591,4 +591,3 @@ class FineTunedModel {
 
 // Export singleton instance
 export const fineTunedModel = new FineTunedModel()
-

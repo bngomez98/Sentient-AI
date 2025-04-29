@@ -11,4 +11,3 @@ fi
 # Start the VAE service
 cd scripts
 python dialogue_vae_service.py
-

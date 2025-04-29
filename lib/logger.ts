@@ -178,4 +178,3 @@ export const logger = new Logger()
 export function log(level: LogLevel, message: string, data?: any) {
   logger.log(level, message, data)
 }
-

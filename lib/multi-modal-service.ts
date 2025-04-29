@@ -166,4 +166,3 @@ function extractTopics(text: string): string[] {
     return []
   }
 }
-

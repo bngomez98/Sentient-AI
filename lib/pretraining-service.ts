@@ -383,4 +383,3 @@ function isLevelEnabled(level: string): boolean {
 
   return requestedLevel >= currentLevel
 }
-

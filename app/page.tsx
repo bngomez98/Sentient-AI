@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import NavBar from "@/components/nav-bar"
 
 export default function LandingPage() {
   const [isHoveringDemo, setIsHoveringDemo] = useState(false)
@@ -24,6 +25,8 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900">
+      <NavBar />
+
       {/* Hero Section */}
       <section className="relative pt-20 pb-32 overflow-hidden">
         {/* Background Elements */}
@@ -601,6 +604,9 @@ export default function LandingPage() {
               <Link href="/about" className="text-slate-300 hover:text-white transition-colors">
                 About
               </Link>
+              <Link href="/status" className="text-slate-300 hover:text-white transition-colors">
+                Status
+              </Link>
               <a
                 href="https://github.com"
                 target="_blank"
@@ -629,4 +635,3 @@ export default function LandingPage() {
     </div>
   )
 }
-

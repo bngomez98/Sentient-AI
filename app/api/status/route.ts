@@ -25,4 +25,3 @@ export async function GET() {
     return NextResponse.json({ status: "error", message: "Service health check failed" }, { status: 500 })
   }
 }
-

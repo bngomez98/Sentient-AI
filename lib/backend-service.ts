@@ -139,4 +139,3 @@ export class BackendService {
 
 // Export singleton instance
 export const backendService = BackendService.getInstance()
-

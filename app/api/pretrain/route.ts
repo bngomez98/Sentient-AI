@@ -330,4 +330,3 @@ function generateFallbackExamples(query: string, domains: string[], maxExamples:
     processingTime: 0,
   }
 }
-

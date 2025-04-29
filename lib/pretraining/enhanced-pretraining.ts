@@ -650,4 +650,3 @@ Based on the above knowledge and examples, enhance the initial reasoning to prov
 
 // Export singleton instance
 export const enhancedPretraining = new EnhancedPretrainingService()
-

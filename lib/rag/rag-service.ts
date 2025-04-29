@@ -134,4 +134,3 @@ Instructions:
 
 // Export singleton instance
 export const ragService = new RagService()
-

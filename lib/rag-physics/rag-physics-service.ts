@@ -117,4 +117,3 @@ class RagPhysicsService {
 
 // Export singleton instance
 export const ragPhysicsService = new RagPhysicsService()
-

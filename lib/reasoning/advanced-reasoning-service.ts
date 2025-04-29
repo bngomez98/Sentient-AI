@@ -640,4 +640,3 @@ Provide a concise final thought that synthesizes the key insights from this reas
 
 // Export singleton instance
 export const advancedReasoning = new AdvancedReasoningService()
-

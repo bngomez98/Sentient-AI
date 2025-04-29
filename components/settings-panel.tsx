@@ -403,4 +403,3 @@ export function SettingsPanel({ onSave, initialSettings = {} }: SettingsPanelPro
     </Card>
   )
 }
-

@@ -241,4 +241,3 @@ export function ContextualSignalVisualizer({ contextualSignal }: ContextualSigna
     </div>
   )
 }
-
