@@ -1,152 +1,190 @@
-import { type NextRequest, NextResponse } from "next/server"
-import type { Message as VercelChatMessage } from "ai"
-import { generateText } from "ai"
-import { openai } from "@ai-sdk/openai"
 import { logger } from "@/lib/logger"
-import { kv } from "@vercel/kv"
+import { processWithReasoning } from "@/lib/reasoning"
+import { enhanceWithPretraining } from "@/lib/pretraining"
+import { dialogueVAEService } from "@/lib/dialogue-vae"
+import { openai } from "@ai-sdk/openai"
+import { generateText } from "ai"
 
 export const runtime = "nodejs"
 
-// Define the system prompt for better contextual understanding
-const SYSTEM_PROMPT = `You are Sentient-1, an advanced AI assistant with enhanced reasoning capabilities.
-- Maintain context throughout the conversation
-- Provide detailed, accurate responses
-- Use markdown formatting for better readability
-- When appropriate, include code examples with proper syntax highlighting
-- Be helpful, friendly, and concise
-- If you don't know something, admit it rather than making up information
-`
+// Use the PPLX API key directly
+const PPLX_API_KEY = "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"
 
-// Define the request body type
-interface RequestBody {
-  messages: VercelChatMessage[]
-  chatId?: string
-  temperature?: number
-  maxTokens?: number
-  model?: string
-}
-
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const startTime = Date.now()
-    const { messages, chatId, temperature = 0.7, maxTokens = 1000, model = "gpt-4o" }: RequestBody = await req.json()
+    // Parse the request body
+    const { messages, systemPrompt = "", temperature = 0.2 } = await req.json()
 
-    // Log the incoming request
-    logger.info("Chat request received", {
-      chatId,
-      messageCount: messages.length,
-      model,
-      temperature,
-      maxTokens,
-      lastMessage: messages.length > 0 ? messages[messages.length - 1].content.substring(0, 50) + "..." : "none",
+    // Validate messages
+    if (!Array.isArray(messages)) {
+      return new Response(JSON.stringify({ error: "Invalid messages format" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      })
+    }
+
+    // Get the last user message for preprocessing
+    const lastUserMessage = messages.filter((m) => m.role === "user").pop() || {}
+    const lastUserContent = lastUserMessage.content || ""
+    const lastUserFiles = lastUserMessage.files || []
+
+    // Process with reasoning
+    const reasoningSteps = await processWithReasoning(lastUserContent, messages)
+    logger.info("Reasoning steps completed", { steps: reasoningSteps.length })
+
+    // Enhance with pretraining examples
+    const enhancedMessages = await enhanceWithPretraining(messages, lastUserContent)
+    logger.info("Pretraining enhancement completed", {
+      originalCount: messages.length,
+      enhancedCount: enhancedMessages.length,
     })
 
-    // If we have a chatId, try to retrieve previous context from KV store
-    let contextualMessages = [...messages]
-    if (chatId) {
-      try {
-        const storedMessages = await kv.get<VercelChatMessage[]>(`chat:${chatId}:messages`)
-        if (storedMessages && storedMessages.length > 0) {
-          // Merge stored context with new messages, but limit to last 10 messages to avoid token limits
-          const contextLimit = 10
-          if (storedMessages.length > contextLimit) {
-            contextualMessages = [
-              ...storedMessages.slice(0, 1), // Keep the first system message if any
-              ...storedMessages.slice(-contextLimit + 1), // Take the most recent messages
-              ...messages.slice(-1), // Add the new user message
-            ]
-          } else {
-            contextualMessages = [...storedMessages, ...messages.slice(-1)]
-          }
-          logger.info("Retrieved context from KV store", {
-            chatId,
-            storedMessageCount: storedMessages.length,
-            mergedMessageCount: contextualMessages.length,
-          })
-        }
-      } catch (kvError) {
-        logger.error("Error retrieving chat context from KV", { error: kvError, chatId })
-        // Continue with just the current messages if KV retrieval fails
-      }
-    }
-
-    // Ensure we have a system message at the beginning
-    if (contextualMessages.length === 0 || contextualMessages[0].role !== "system") {
-      contextualMessages.unshift({ role: "system", content: SYSTEM_PROMPT })
-    }
-
-    // Use the AI SDK to generate a response
+    // Extract contextual signal using VAE
+    let contextualSignal = null
     try {
-      const { text } = await generateText({
-        model: openai(model),
-        messages: contextualMessages,
-        temperature: Number(temperature),
-        maxTokens: Number(maxTokens),
+      // Use the VAE service endpoint from environment variable
+      contextualSignal = await dialogueVAEService.extractContextualSignal(lastUserContent)
+      logger.info("Contextual signal extracted", {
+        shape: contextualSignal?.shape,
+        available: !!contextualSignal,
       })
-
-      // Store the updated conversation in KV if we have a chatId
-      if (chatId) {
-        try {
-          // Add the assistant's response to the messages
-          const updatedMessages = [...contextualMessages, { role: "assistant", content: text }]
-
-          // Store in KV with expiration (7 days)
-          await kv.set(`chat:${chatId}:messages`, updatedMessages, { ex: 60 * 60 * 24 * 7 })
-          logger.info("Stored updated conversation in KV", { chatId, messageCount: updatedMessages.length })
-        } catch (kvError) {
-          logger.error("Error storing chat in KV", { error: kvError, chatId })
-          // Continue even if KV storage fails
-        }
-      }
-
-      // Log performance metrics
-      const endTime = Date.now()
-      logger.info("Chat response generated", {
-        chatId,
-        responseTime: endTime - startTime,
-        responseLength: text.length,
-        model,
-      })
-
-      return NextResponse.json({
-        message: {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: text,
-          createdAt: new Date().toISOString(),
-        },
-        timestamp: new Date().toISOString(),
-      })
-    } catch (aiError) {
-      logger.error("Error generating AI response:", aiError)
-
-      // Fallback to a simple response
-      return NextResponse.json({
-        message: {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: "I apologize, but I encountered an error generating a response. Please try again later.",
-          createdAt: new Date().toISOString(),
-        },
-        error: aiError instanceof Error ? aiError.message : "Unknown error",
-        timestamp: new Date().toISOString(),
-      })
+    } catch (error) {
+      logger.error("Error extracting contextual signal", error)
+      // Continue without contextual signal
     }
-  } catch (error) {
-    logger.error("Error in chat API:", error)
-    return NextResponse.json(
-      {
-        message: {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content:
-            "I apologize, but I encountered an error processing your request. Please try again or rephrase your question.",
-          createdAt: new Date().toISOString(),
-        },
-        error: error instanceof Error ? error.message : "Unknown error",
-        timestamp: new Date().toISOString(),
+
+    // Process file content if files are present
+    let fileContent = ""
+    let fileAnalysis = ""
+
+    if (lastUserFiles && lastUserFiles.length > 0) {
+      logger.info(`Processing ${lastUserFiles.length} files from user message`)
+
+      // Combine file content
+      fileContent = lastUserFiles
+        .map((file) => {
+          return `--- File: ${file.name} (${file.type}) ---\n${file.content}\n\n`
+        })
+        .join("\n")
+
+      // Generate analysis of file content using OpenAI
+      try {
+        const { text } = await generateText({
+          model: openai("gpt-4o"),
+          prompt: `Analyze the following file content and provide a brief summary:
+          
+          ${fileContent.substring(0, 5000)}${fileContent.length > 5000 ? "..." : ""}`,
+        })
+
+        fileAnalysis = text
+        logger.info("Generated file analysis", { analysisLength: fileAnalysis.length })
+      } catch (error) {
+        logger.error("Error generating file analysis", error)
+        fileAnalysis = "Error analyzing file content."
+      }
+    }
+
+    // Prepare system message with reasoning context, contextual signal, and file analysis
+    const reasoningContext = reasoningSteps.map((step) => `${step.description}: ${step.result}`).join("\n")
+
+    // Add contextual signal information if available with more detailed analysis
+    const contextualInfo = contextualSignal
+      ? `
+Contextual analysis indicates this query has the following characteristics:
+- Complexity: ${Math.round(contextualSignal.vector[0] * 10)}/10
+- Question type: ${contextualSignal.vector[2] > 0.5 ? "Information seeking" : "Statement or request"}
+- Emotional intensity: ${Math.round(contextualSignal.vector[3] * 10)}/10
+- Technical content: ${Math.round(contextualSignal.vector[7] * 10)}/10
+- Length: ${Math.round(contextualSignal.vector[4] * 100)} words (normalized)
+- Sentence structure: ${contextualSignal.vector[6] > 0.5 ? "Complex" : "Simple"}`
+      : ""
+
+    // Add file analysis if available
+    const fileInfo = fileContent
+      ? `
+The user has uploaded ${lastUserFiles.length} file(s). Here's a summary of the file content:
+${fileAnalysis}
+
+You should reference this information in your response when relevant.`
+      : ""
+
+    const enhancedSystemPrompt = `
+You are Sentient-1, an advanced neural-symbolic AI assistant with contextual understanding and reasoning capabilities.
+Be precise, concise, and helpful. You can process and analyze various file types including PDFs, images, audio, video, and documents.
+
+I've analyzed this query with the following reasoning:
+${reasoningContext}
+${contextualInfo}
+${fileInfo}
+
+Based on this analysis, provide a well-structured, accurate response.
+`.trim()
+
+    // Prepare API request body exactly as specified
+    const apiRequestBody = {
+      model: "sonar-small-chat", // Updated to a valid model name
+      messages: [{ role: "system", content: enhancedSystemPrompt }, ...enhancedMessages],
+      max_tokens: 1000,
+      temperature: temperature,
+      top_p: 0.9,
+      top_k: 0,
+      stream: false,
+      presence_penalty: 0,
+      frequency_penalty: 1,
+    }
+
+    // Use Perplexity API with the direct API key
+    const response = await fetch("https://api.perplexity.ai/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${PPLX_API_KEY}`,
+        "Content-Type": "application/json",
       },
-      { status: 200 }, // Return 200 even for errors to avoid client-side JSON parsing issues
+      body: JSON.stringify(apiRequestBody),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      logger.error("Perplexity API error", { status: response.status, error: errorText })
+      throw new Error(`Perplexity API error: ${response.status} - ${errorText}`)
+    }
+
+    const data = await response.json()
+
+    // Log the successful response
+    logger.info("Successful API response", {
+      model: "sonar-small-chat",
+      messageCount: enhancedMessages.length,
+      responseLength: data.choices[0].message.content.length,
+      pretrainingUsed: enhancedMessages.length > messages.length,
+      contextualSignalUsed: !!contextualSignal,
+      filesProcessed: lastUserFiles.length,
+    })
+
+    return new Response(
+      JSON.stringify({
+        content: data.choices[0].message.content,
+        role: "assistant",
+        reasoning: reasoningSteps,
+        contextualSignal: contextualSignal
+          ? {
+              available: true,
+              dimensions: contextualSignal.shape[1],
+            }
+          : null,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    )
+  } catch (error) {
+    logger.error("Error in chat API route", error)
+
+    // Return a graceful error response
+    return new Response(
+      JSON.stringify({
+        error: "Something went wrong processing your request. Please try again.",
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
     )
   }
 }
+

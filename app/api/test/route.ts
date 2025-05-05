@@ -1,69 +1,80 @@
-import { logger } from "@/lib/logger"
-
-// Use the PPLX API key from environment variables
-const PPLX_API_KEY = process.env.PPLX_API_KEY || "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"
+import { NextResponse } from "next/server"
 
 export async function GET() {
   try {
-    // Test Perplexity API
-    try {
-      const requestBody = {
-        model: "sonar",
-        messages: [
-          { role: "system", content: "Be precise and concise." },
-          { role: "user", content: "Hello" },
-        ],
-        max_tokens: 50,
-        temperature: 0.2,
-        top_p: 0.9,
-        top_k: 0,
-        stream: false,
-        presence_penalty: 0,
-        frequency_penalty: 1,
-      }
+    // Check if API key is available
+    if (!process.env.PPLX_API_KEY) {
+      return NextResponse.json(
+        {
+          status: "error",
+          message: "API key not configured",
+          env_vars: {
+            has_pplx_key: process.env.PPLX_API_KEY ? "yes" : "no",
+          },
+        },
+        { status: 500 },
+      )
+    }
 
-      const pplxResponse = await fetch("https://api.perplexity.ai/chat/completions", {
+    // Test API connection with valid model
+    try {
+      const response = await fetch("https://api.perplexity.ai/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${PPLX_API_KEY}`,
+          Authorization: `Bearer ${process.env.PPLX_API_KEY}`,
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({
+          model: "sonar-small-chat", // Updated to a valid model name
+          messages: [{ role: "user", content: "Hello" }],
+          max_tokens: 1,
+        }),
       })
 
-      if (pplxResponse.ok) {
-        const data = await pplxResponse.json()
-        return new Response(
-          JSON.stringify({
-            status: "ok",
-            message: "Perplexity API is working correctly",
-            response: data,
-          }),
-          {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
+      if (response.ok) {
+        return NextResponse.json({
+          status: "ok",
+          message: "API test endpoint is working",
+          api_connection: "successful",
+          env_vars: {
+            has_pplx_key: process.env.PPLX_API_KEY ? "yes" : "no",
+            key_length: process.env.PPLX_API_KEY?.length || 0,
           },
-        )
+        })
       } else {
-        const errorText = await pplxResponse.text()
-        throw new Error(`API error: ${pplxResponse.status} - ${errorText}`)
+        const errorText = await response.text()
+        return NextResponse.json({
+          status: "error",
+          message: "API connection test failed",
+          error_details: errorText,
+          env_vars: {
+            has_pplx_key: process.env.PPLX_API_KEY ? "yes" : "no",
+            key_length: process.env.PPLX_API_KEY?.length || 0,
+          },
+        })
       }
-    } catch (error) {
-      throw error
+    } catch (error: any) {
+      return NextResponse.json(
+        {
+          status: "error",
+          message: `API connection test error: ${error.message || "Unknown error"}`,
+          env_vars: {
+            has_pplx_key: process.env.PPLX_API_KEY ? "yes" : "no",
+            key_length: process.env.PPLX_API_KEY?.length || 0,
+          },
+        },
+        { status: 500 },
+      )
     }
-  } catch (error) {
-    logger.error("API test failed", error)
-
-    return new Response(
-      JSON.stringify({
-        status: "error",
-        message: "API test failed",
-        error: error instanceof Error ? error.message : String(error),
-      }),
+  } catch (error: any) {
+    return NextResponse.json(
       {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
+        status: "error",
+        message: `Test error: ${error.message || "Unknown error"}`,
+        stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
       },
+      { status: 500 },
     )
   }
 }
+

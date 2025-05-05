@@ -1,0 +1,5 @@
+flask==2.0.1
+numpy==1.21.2
+scikit-learn==1.0
+nltk==3.6.3
+
