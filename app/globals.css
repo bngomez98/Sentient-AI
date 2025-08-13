@@ -39,6 +39,8 @@
     --brand-charcoal: 240 10% 3.9%;
     --brand-navy: 222 47% 11%;
     --brand-red: 0 72% 51%;
+    /* Added missing brand-blue color definition */
+    --brand-blue: 217 91% 60%; /* #3b82f6 - Professional blue for accents */
   }
 }
 

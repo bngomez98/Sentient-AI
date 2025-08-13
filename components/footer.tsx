@@ -7,9 +7,9 @@ export function Footer() {
     {
       title: "The Movement",
       links: [
-        { href: "/about", label: "The Crisis" },
+        { href: "/problem", label: "The Problem" },
         { href: "/solution", label: "The Solution" },
-        { href: "/data", label: "Evidence" },
+        { href: "/my-district", label: "My District" },
       ],
     },
     {
@@ -36,7 +36,7 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
           <div className="col-span-2 lg:col-span-2">
             <Link href="/" className="flex items-center space-x-2 mb-4">
-              <Image src="/fresh-535-logo-white.png" alt="Fresh 535 Logo" width={32} height={32} />
+              <Image src="/brand-logo.png" alt="Fresh 535 Logo" width={32} height={32} />
               <span className="text-xl font-semibold">FRESH 535</span>
             </Link>
             <p className="text-slate-400 max-w-sm mb-6">

@@ -1,7 +1,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Users, Target, Vote, Zap, Globe, MapPin } from "lucide-react"
+import { ArrowRight, Users, Target, Vote, Zap, Globe, MapPin } from 'lucide-react'
 import { HistoricalReelectionChart } from "@/components/charts/historical-reelection-chart"
 import { CongressionalApprovalChart } from "@/components/charts/congressional-approval-chart"
 
@@ -174,6 +174,20 @@ export default function HomePage() {
                 Take the Fresh 535 Pledge
               </Link>
             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Privacy Notice Section */}
+      <section className="py-8 bg-slate-100">
+        <div className="container mx-auto container-padding">
+          <div className="text-center text-sm text-slate-600">
+            <p className="mb-2">
+              <strong>Privacy Notice:</strong> Fresh 535 respects your privacy. We collect minimal information necessary for voter coordination and never share personal data with third parties.
+            </p>
+            <p>
+              Email addresses remain private and are used only for movement updates. Anonymous pledges are welcome and equally valuable.
+            </p>
           </div>
         </div>
       </section>

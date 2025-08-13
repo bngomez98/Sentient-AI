@@ -9,68 +9,16 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckCircle, Loader2 } from "lucide-react"
-
-const US_STATES = [
-  "Alabama",
-  "Alaska",
-  "Arizona",
-  "Arkansas",
-  "California",
-  "Colorado",
-  "Connecticut",
-  "Delaware",
-  "Florida",
-  "Georgia",
-  "Hawaii",
-  "Idaho",
-  "Illinois",
-  "Indiana",
-  "Iowa",
-  "Kansas",
-  "Kentucky",
-  "Louisiana",
-  "Maine",
-  "Maryland",
-  "Massachusetts",
-  "Michigan",
-  "Minnesota",
-  "Mississippi",
-  "Missouri",
-  "Montana",
-  "Nebraska",
-  "Nevada",
-  "New Hampshire",
-  "New Jersey",
-  "New Mexico",
-  "New York",
-  "North Carolina",
-  "North Dakota",
-  "Ohio",
-  "Oklahoma",
-  "Oregon",
-  "Pennsylvania",
-  "Rhode Island",
-  "South Carolina",
-  "South Dakota",
-  "Tennessee",
-  "Texas",
-  "Utah",
-  "Vermont",
-  "Virginia",
-  "Washington",
-  "West Virginia",
-  "Wisconsin",
-  "Wyoming",
-]
+import { Checkbox } from "@/components/ui/checkbox"
 
 export function PledgeForm() {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
-    state: "",
     zipCode: "",
     comments: "",
+    isAnonymous: false,
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
@@ -94,9 +42,9 @@ export function PledgeForm() {
           firstName: "",
           lastName: "",
           email: "",
-          state: "",
           zipCode: "",
           comments: "",
+          isAnonymous: false,
         })
       }
     } catch (error) {
@@ -106,10 +54,18 @@ export function PledgeForm() {
     }
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
+    }))
+  }
+
+  const handleAnonymousChange = (checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      isAnonymous: checked,
+      email: checked ? "" : prev.email,
     }))
   }
 
@@ -125,8 +81,9 @@ export function PledgeForm() {
             You've joined thousands of Americans committed to restoring congressional accountability.
           </p>
           <p className="text-green-700">
-            We'll keep you informed about elections in your area and provide resources to help you make informed
-            decisions.
+            {formData.isAnonymous
+              ? "Your anonymous pledge has been recorded."
+              : "We'll keep you informed about elections in your area and provide resources to help you make informed decisions."}
           </p>
         </CardContent>
       </Card>
@@ -135,6 +92,13 @@ export function PledgeForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="flex items-center space-x-2 mb-4">
+        <Checkbox id="anonymous" checked={formData.isAnonymous} onCheckedChange={handleAnonymousChange} />
+        <Label htmlFor="anonymous" className="text-sm font-medium text-slate-700">
+          Pledge anonymously (no email required)
+        </Label>
+      </div>
+
       <div className="grid md:grid-cols-2 gap-6">
         <div>
           <Label htmlFor="firstName" className="text-sm font-medium text-slate-700">
@@ -154,13 +118,12 @@ export function PledgeForm() {
 
         <div>
           <Label htmlFor="lastName" className="text-sm font-medium text-slate-700">
-            Last Name *
+            Last Name (Optional)
           </Label>
           <Input
             id="lastName"
             name="lastName"
             type="text"
-            required
             value={formData.lastName}
             onChange={handleChange}
             className="mt-1"
@@ -169,63 +132,44 @@ export function PledgeForm() {
         </div>
       </div>
 
-      <div>
-        <Label htmlFor="email" className="text-sm font-medium text-slate-700">
-          Email Address *
-        </Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          required
-          value={formData.email}
-          onChange={handleChange}
-          className="mt-1"
-          placeholder="Enter your email address"
-        />
-        <p className="text-xs text-slate-500 mt-1">
-          We'll use this to send you election reminders and voter resources.
-        </p>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-6">
+      {!formData.isAnonymous && (
         <div>
-          <Label htmlFor="state" className="text-sm font-medium text-slate-700">
-            State *
-          </Label>
-          <select
-            id="state"
-            name="state"
-            required
-            value={formData.state}
-            onChange={handleChange}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">Select your state</option>
-            {US_STATES.map((state) => (
-              <option key={state} value={state}>
-                {state}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <Label htmlFor="zipCode" className="text-sm font-medium text-slate-700">
-            ZIP Code *
+          <Label htmlFor="email" className="text-sm font-medium text-slate-700">
+            Email Address *
           </Label>
           <Input
-            id="zipCode"
-            name="zipCode"
-            type="text"
-            required
-            value={formData.zipCode}
+            id="email"
+            name="email"
+            type="email"
+            required={!formData.isAnonymous}
+            value={formData.email}
             onChange={handleChange}
             className="mt-1"
-            placeholder="Enter your ZIP code"
-            pattern="[0-9]{5}(-[0-9]{4})?"
+            placeholder="Enter your email address"
           />
+          <p className="text-xs text-slate-500 mt-1">
+            Your email stays private and is never visible to the public. We'll use this to send you election reminders
+            and voter resources.
+          </p>
         </div>
+      )}
+
+      <div>
+        <Label htmlFor="zipCode" className="text-sm font-medium text-slate-700">
+          ZIP Code *
+        </Label>
+        <Input
+          id="zipCode"
+          name="zipCode"
+          type="text"
+          required
+          value={formData.zipCode}
+          onChange={handleChange}
+          className="mt-1"
+          placeholder="Enter your ZIP code"
+          pattern="[0-9]{5}(-[0-9]{4})?"
+        />
+        <p className="text-xs text-slate-500 mt-1">Required to track movement momentum by district.</p>
       </div>
 
       <div>
@@ -243,9 +187,9 @@ export function PledgeForm() {
         />
       </div>
 
-      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-        <h3 className="font-semibold text-blue-900 mb-2">Your Pledge:</h3>
-        <p className="text-sm text-blue-800 italic">
+      <div className="bg-brand-navy text-brand-cream p-4 rounded-lg border">
+        <h3 className="font-semibold mb-2">Your Pledge:</h3>
+        <p className="text-sm italic opacity-90">
           "I pledge to vote against every incumbent member of Congress in every election until we achieve complete
           congressional turnover. I will vote for any qualified challenger over any incumbent, regardless of party
           affiliation, because accountability matters more than ideology."
@@ -263,10 +207,15 @@ export function PledgeForm() {
         )}
       </Button>
 
-      <p className="text-xs text-slate-500 text-center">
-        By submitting this form, you agree to receive election reminders and movement updates. You can unsubscribe at
-        any time. We will never sell or share your information.
-      </p>
+      <div className="bg-slate-50 p-4 rounded-lg border">
+        <h4 className="font-semibold text-slate-900 mb-2">Privacy Notice</h4>
+        <p className="text-xs text-slate-600">
+          Your information is used solely for movement coordination and voter education. We never sell or share your
+          data with third parties. Email addresses remain private and are not visible to the public. You can unsubscribe
+          from communications at any time. Anonymous pledges are recorded without any personal information beyond zip
+          code for district tracking.
+        </p>
+      </div>
     </form>
   )
 }

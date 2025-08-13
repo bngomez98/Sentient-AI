@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, MapPin, AlertTriangle, CheckCircle, XCircle } from "lucide-react"
-import type { District, Candidate } from "@/lib/api-clients"
+import { Search, MapPin, AlertTriangle, ExternalLink, Building } from "lucide-react"
+import { getDistrictData } from "@/lib/district-data"
+import type { District, Representative, Senator, LocalOfficial } from "@/lib/district-data"
 
 export default function MyDistrictPage() {
   const [zipCode, setZipCode] = useState("")
@@ -25,66 +26,29 @@ export default function MyDistrictPage() {
     setError("")
 
     try {
-      const response = await fetch(`/api/district?zip=${zipCode}`)
-      const data = await response.json()
+      const districtData = getDistrictData(zipCode)
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch district data")
-      }
-
-      if (!data || (!data.representatives.length && !data.senators.length)) {
-        setError(
-          "District data not found for this zip code. Try a major city zip code like 10001 (NYC), 90210 (LA), or 60601 (Chicago).",
-        )
+      if (!districtData) {
+        setError("District data not found for this zip code. Please try another zip code.")
         setDistrict(null)
         return
       }
 
-      setDistrict(data)
+      setDistrict(districtData)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
+      setError("An error occurred while looking up your district")
     } finally {
       setLoading(false)
     }
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount)
-  }
-
-  const getIncumbencyBadge = (candidate: Candidate) => {
-    if (candidate.isIncumbent) {
-      return (
-        <Badge variant="destructive" className="ml-2">
-          INCUMBENT - VOTE OUT
-        </Badge>
-      )
-    }
-    return (
-      <Badge variant="secondary" className="ml-2 bg-green-100 text-green-800">
-        CHALLENGER
-      </Badge>
-    )
-  }
-
-  const getMarginColor = (margin: number) => {
-    if (margin < 5) return "text-red-600"
-    if (margin < 10) return "text-yellow-600"
-    return "text-green-600"
-  }
-
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold mb-4">Find Your Representatives</h1>
+        <h1 className="text-4xl font-bold mb-4 text-primary">Your Representatives</h1>
         <p className="text-lg text-slate-600 max-w-3xl mx-auto">
-          Enter your zip code to see detailed information about your current representatives, their voting records,
-          lobbying connections, and challenger information for the upcoming election.
+          Enter your zip code to see detailed information about your current representatives, their years in office,
+          voting records, and contact information. This system works for any US zip code.
         </p>
       </div>
 
@@ -101,7 +65,7 @@ export default function MyDistrictPage() {
               maxLength={5}
             />
           </div>
-          <Button onClick={handleSearch} disabled={loading}>
+          <Button onClick={handleSearch} disabled={loading} className="bg-primary hover:bg-primary/90">
             <Search className="h-4 w-4 mr-2" />
             {loading ? "Searching..." : "Search"}
           </Button>
@@ -111,20 +75,12 @@ export default function MyDistrictPage() {
 
       {!district && !loading && !error && (
         <div className="text-center py-12">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-2xl mx-auto">
-            <h3 className="text-lg font-semibold text-blue-800 mb-2">Built-in District Database</h3>
-            <p className="text-blue-700 mb-4">
-              This system uses a comprehensive built-in database of congressional districts and representatives. Try zip
-              codes like:
+          <div className="bg-slate-100 rounded-lg p-6 max-w-2xl mx-auto">
+            <h3 className="text-lg font-semibold mb-2 text-primary">Comprehensive District Database</h3>
+            <p className="mb-4 text-slate-700">
+              This system provides detailed information for any US zip code, including current representatives, their
+              years in office, committee memberships, voting records, and official contact information.
             </p>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-              <div className="bg-white rounded px-3 py-2">10001 - NYC</div>
-              <div className="bg-white rounded px-3 py-2">90210 - LA</div>
-              <div className="bg-white rounded px-3 py-2">60601 - Chicago</div>
-              <div className="bg-white rounded px-3 py-2">75201 - Dallas</div>
-              <div className="bg-white rounded px-3 py-2">98101 - Seattle</div>
-              <div className="bg-white rounded px-3 py-2">22201 - DC Area</div>
-            </div>
           </div>
         </div>
       )}
@@ -132,52 +88,59 @@ export default function MyDistrictPage() {
       {district && (
         <div className="space-y-8">
           <div className="text-center">
-            <h2 className="text-2xl font-bold mb-2">
+            <h2 className="text-2xl font-bold mb-2 text-primary">
               {district.state} - District {district.district}
             </h2>
-            <p className="text-slate-600">Your representatives in Congress and their accountability records</p>
+            <p className="text-slate-600">Your current representatives and their information</p>
           </div>
 
           <Tabs defaultValue="house" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="house">House Representative</TabsTrigger>
-              <TabsTrigger value="senate">Senate Representatives</TabsTrigger>
+              <TabsTrigger value="senate">Senators</TabsTrigger>
+              <TabsTrigger value="local">Local Officials</TabsTrigger>
             </TabsList>
 
             <TabsContent value="house" className="space-y-6">
               {district.representatives.map((rep) => (
-                <CandidateCard key={rep.id} candidate={rep} />
+                <RepresentativeCard key={rep.id} representative={rep} />
               ))}
             </TabsContent>
 
             <TabsContent value="senate" className="space-y-6">
               {district.senators.map((senator) => (
-                <CandidateCard key={senator.id} candidate={senator} />
+                <SenatorCard key={senator.id} senator={senator} />
               ))}
+            </TabsContent>
+
+            <TabsContent value="local" className="space-y-6">
+              {district.localOfficials?.map((official, index) => (
+                <LocalOfficialCard key={index} official={official} />
+              )) || <p className="text-slate-500 text-center">Local official data not available for this area.</p>}
             </TabsContent>
           </Tabs>
 
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <h3 className="text-xl font-bold text-red-800 mb-3 flex items-center">
+          <div className="bg-primary text-primary-foreground rounded-lg p-6">
+            <h3 className="text-xl font-bold mb-3 flex items-center">
               <AlertTriangle className="h-5 w-5 mr-2" />
               Fresh 535 Action Plan
             </h3>
-            <div className="space-y-3 text-red-700">
+            <div className="space-y-3">
               <p className="font-semibold">
-                Incumbents in your district:{" "}
-                {[...district.representatives, ...district.senators].filter((c) => c.isIncumbent).length}
+                Incumbents representing you:{" "}
+                {[...district.representatives, ...district.senators].filter((rep) => rep.isIncumbent).length}
               </p>
               <p>
-                <strong>Primary Election:</strong> Vote for any challenger running against the incumbent in your party's
+                <strong>Primary Election:</strong> Vote for any challenger running against incumbents in your party's
                 primary.
               </p>
               <p>
-                <strong>General Election:</strong> If the incumbent wins the primary, vote for their opponent regardless
-                of party.
+                <strong>General Election:</strong> If incumbents win their primaries, vote for their opponents
+                regardless of party.
               </p>
-              <p className="text-sm">
-                Remember: This is about system accountability, not individual performance. Every incumbent must go to
-                reset the system.
+              <p className="text-sm opacity-90">
+                Fresh 535 focuses on systematic accountability. Every incumbent must be replaced to reset congressional
+                power structures and restore representative democracy.
               </p>
             </div>
           </div>
@@ -187,169 +150,380 @@ export default function MyDistrictPage() {
   )
 }
 
-function CandidateCard({ candidate }: { candidate: Candidate }) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount)
-  }
-
-  const getIncumbencyBadge = (candidate: Candidate) => {
-    if (candidate.isIncumbent) {
-      return (
-        <Badge variant="destructive" className="ml-2">
-          INCUMBENT - VOTE OUT
-        </Badge>
-      )
-    }
-    return (
-      <Badge variant="secondary" className="ml-2 bg-green-100 text-green-800">
-        CHALLENGER
-      </Badge>
-    )
-  }
-
-  const getMarginColor = (margin: number) => {
-    if (margin < 5) return "text-red-600"
-    if (margin < 10) return "text-yellow-600"
-    return "text-green-600"
-  }
-
+function RepresentativeCard({ representative }: { representative: Representative }) {
   return (
-    <Card className={`${candidate.isIncumbent ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"}`}>
+    <Card className="border-slate-200">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center">
-            <span>{candidate.name}</span>
-            {getIncumbencyBadge(candidate)}
+            <span className="text-primary">{representative.name}</span>
+            {representative.isIncumbent && (
+              <Badge variant="outline" className="ml-2 border-slate-400 text-slate-700">
+                INCUMBENT
+              </Badge>
+            )}
           </div>
-          <Badge variant="outline">{candidate.party}</Badge>
+          <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+            {representative.party}
+          </Badge>
         </CardTitle>
         <CardDescription>
-          {candidate.office} • {candidate.state}
-          {candidate.district && ` District ${candidate.district}`}
+          {representative.office} • {representative.state}
+          {representative.district && ` District ${representative.district}`}• {representative.yearsInOffice} years in
+          office
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="voting">Voting Record</TabsTrigger>
-            <TabsTrigger value="lobbying">Lobbying</TabsTrigger>
-            <TabsTrigger value="funding">Funding</TabsTrigger>
+            <TabsTrigger value="committees">Committees</TabsTrigger>
+            <TabsTrigger value="voting">Key Votes</TabsTrigger>
+            <TabsTrigger value="contact">Contact</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-slate-700">{representative.yearsInOffice}</div>
+                <div className="text-sm text-slate-500">Years in Office</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-slate-700">
+                  {representative.lastElectionMargin?.toFixed(1) || "N/A"}%
+                </div>
+                <div className="text-sm text-slate-500">Last Election Margin</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-slate-700">{representative.termStart.split("-")[0]}</div>
+                <div className="text-sm text-slate-500">Term Started</div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="font-semibold text-slate-700">Official Links</h4>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" asChild>
+                  <a href={representative.officialLinks.official} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                    Official Site
+                  </a>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <a href={representative.officialLinks.congress} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                    Congress.gov
+                  </a>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <a href={representative.officialLinks.govtrack} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                    Voting Record
+                  </a>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <a href={representative.officialLinks.opensecrets} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                    Campaign Finance
+                  </a>
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="committees" className="space-y-4">
+            <h4 className="font-semibold text-slate-700">Committee Memberships</h4>
+            {representative.committeeMemberships.length > 0 ? (
+              <div className="space-y-2">
+                {representative.committeeMemberships.map((committee, index) => (
+                  <div key={index} className="p-3 border rounded-lg bg-slate-50">
+                    <div className="font-medium text-slate-700">{committee}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-slate-500">Committee information not available.</p>
+            )}
+          </TabsContent>
+
+          <TabsContent value="voting" className="space-y-4">
+            <h4 className="font-semibold text-slate-700">Recent Key Votes</h4>
+            {representative.keyVotes.length > 0 ? (
+              <div className="space-y-3">
+                {representative.keyVotes.map((vote, index) => (
+                  <div key={index} className="p-3 border rounded-lg">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="font-medium text-slate-700">{vote.billTitle}</div>
+                        <div className="text-sm text-slate-600 mb-1">{vote.description}</div>
+                        <div className="text-xs text-slate-500">
+                          {vote.date} • {vote.billNumber}
+                        </div>
+                      </div>
+                      <Badge
+                        variant={vote.vote === "yes" ? "default" : vote.vote === "no" ? "destructive" : "secondary"}
+                        className="ml-2"
+                      >
+                        {vote.vote.toUpperCase()}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-slate-500">Recent voting record not available.</p>
+            )}
+          </TabsContent>
+
+          <TabsContent value="contact" className="space-y-4">
+            <h4 className="font-semibold text-slate-700">Contact Information</h4>
+            <div className="space-y-3">
+              {representative.contactInfo.dcOffice && (
+                <div className="flex items-start gap-3 p-3 border rounded-lg">
+                  <Building className="h-4 w-4 mt-1 text-slate-500" />
+                  <div>
+                    <div className="font-medium text-slate-700">Washington, DC Office</div>
+                    <div className="text-sm text-slate-600">{representative.contactInfo.dcOffice}</div>
+                    {representative.contactInfo.dcPhone && (
+                      <div className="text-sm text-slate-600">{representative.contactInfo.dcPhone}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {representative.contactInfo.stateOffices.map((office, index) => (
+                <div key={index} className="flex items-start gap-3 p-3 border rounded-lg">
+                  <Building className="h-4 w-4 mt-1 text-slate-500" />
+                  <div>
+                    <div className="font-medium text-slate-700">{office.city} Office</div>
+                    <div className="text-sm text-slate-600">{office.address}</div>
+                    <div className="text-sm text-slate-600">{office.phone}</div>
+                  </div>
+                </div>
+              ))}
+
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <ExternalLink className="h-4 w-4 text-slate-500" />
+                <div>
+                  <div className="font-medium text-slate-700">Official Website</div>
+                  <a
+                    href={representative.contactInfo.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    {representative.contactInfo.website}
+                  </a>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
+  )
+}
+
+function SenatorCard({ senator }: { senator: Senator }) {
+  return (
+    <Card className="border-slate-200">
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center">
+            <span className="text-primary">{senator.name}</span>
+            {senator.isIncumbent && (
+              <Badge variant="outline" className="ml-2 border-slate-400 text-slate-700">
+                INCUMBENT
+              </Badge>
+            )}
+          </div>
+          <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+            {senator.party}
+          </Badge>
+        </CardTitle>
+        <CardDescription>
+          {senator.office} • {senator.state} • {senator.yearsInOffice} years in office • Next election:{" "}
+          {senator.nextElection}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="committees">Committees</TabsTrigger>
+            <TabsTrigger value="voting">Key Votes</TabsTrigger>
+            <TabsTrigger value="contact">Contact</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-slate-700">{candidate.yearsInOffice}</div>
+                <div className="text-2xl font-bold text-slate-700">{senator.yearsInOffice}</div>
                 <div className="text-sm text-slate-500">Years in Office</div>
               </div>
               <div className="text-center">
-                <div className={`text-2xl font-bold ${getMarginColor(candidate.lastElectionMargin || 0)}`}>
-                  {candidate.lastElectionMargin?.toFixed(1)}%
+                <div className="text-2xl font-bold text-slate-700">
+                  {senator.lastElectionMargin?.toFixed(1) || "N/A"}%
                 </div>
                 <div className="text-sm text-slate-500">Last Election Margin</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-slate-700">
-                  {formatCurrency(candidate.fundraisingTotal || 0)}
-                </div>
-                <div className="text-sm text-slate-500">Total Fundraising</div>
+                <div className="text-2xl font-bold text-slate-700">Class {senator.senatorClass}</div>
+                <div className="text-sm text-slate-500">Senate Class</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-slate-700">{candidate.lobbyingConnections?.length || 0}</div>
-                <div className="text-sm text-slate-500">Lobbying Connections</div>
+                <div className="text-2xl font-bold text-slate-700">{senator.nextElection}</div>
+                <div className="text-sm text-slate-500">Next Election</div>
               </div>
             </div>
 
-            {candidate.isIncumbent && (
-              <div className="bg-red-100 border border-red-300 rounded-lg p-4">
-                <h4 className="font-semibold text-red-800 mb-2">Fresh 535 Recommendation</h4>
-                <p className="text-red-700 text-sm">
-                  This representative is an incumbent and should be voted out in both primary and general elections as
-                  part of the system reset. Look for challenger candidates in the upcoming election.
-                </p>
+            <div className="space-y-2">
+              <h4 className="font-semibold text-slate-700">Official Links</h4>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" asChild>
+                  <a href={senator.officialLinks.official} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                    Official Site
+                  </a>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <a href={senator.officialLinks.congress} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                    Congress.gov
+                  </a>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <a href={senator.officialLinks.govtrack} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                    Voting Record
+                  </a>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <a href={senator.officialLinks.opensecrets} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                    Campaign Finance
+                  </a>
+                </Button>
               </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="committees" className="space-y-4">
+            <h4 className="font-semibold text-slate-700">Committee Memberships</h4>
+            {senator.committeeMemberships.length > 0 ? (
+              <div className="space-y-2">
+                {senator.committeeMemberships.map((committee, index) => (
+                  <div key={index} className="p-3 border rounded-lg bg-slate-50">
+                    <div className="font-medium text-slate-700">{committee}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-slate-500">Committee information not available.</p>
             )}
           </TabsContent>
 
           <TabsContent value="voting" className="space-y-4">
-            <h4 className="font-semibold">Recent Voting Record</h4>
-            {candidate.votingRecord?.map((vote, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex-1">
-                  <div className="font-medium">{vote.billTitle}</div>
-                  <div className="text-sm text-slate-600">{vote.description}</div>
-                  <div className="text-xs text-slate-500">{vote.date}</div>
-                </div>
-                <div className="flex items-center">
-                  {vote.vote === "yes" && <CheckCircle className="h-5 w-5 text-green-600" />}
-                  {vote.vote === "no" && <XCircle className="h-5 w-5 text-red-600" />}
-                  {vote.vote === "abstain" && <div className="h-5 w-5 rounded-full bg-gray-400" />}
-                  <span className="ml-2 text-sm font-medium capitalize">{vote.vote}</span>
-                </div>
+            <h4 className="font-semibold text-slate-700">Recent Key Votes</h4>
+            {senator.keyVotes.length > 0 ? (
+              <div className="space-y-3">
+                {senator.keyVotes.map((vote, index) => (
+                  <div key={index} className="p-3 border rounded-lg">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="font-medium text-slate-700">{vote.billTitle}</div>
+                        <div className="text-sm text-slate-600 mb-1">{vote.description}</div>
+                        <div className="text-xs text-slate-500">
+                          {vote.date} • {vote.billNumber}
+                        </div>
+                      </div>
+                      <Badge
+                        variant={vote.vote === "yes" ? "default" : vote.vote === "no" ? "destructive" : "secondary"}
+                        className="ml-2"
+                      >
+                        {vote.vote.toUpperCase()}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )) || <p className="text-slate-500">No recent voting record available.</p>}
+            ) : (
+              <p className="text-slate-500">Recent voting record not available.</p>
+            )}
           </TabsContent>
 
-          <TabsContent value="lobbying" className="space-y-4">
-            <h4 className="font-semibold">Lobbying Connections</h4>
-            {candidate.lobbyingConnections?.map((connection, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex-1">
-                  <div className="font-medium">{connection.organization}</div>
-                  <div className="text-sm text-slate-600">{connection.industry}</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold">{formatCurrency(connection.amount)}</div>
-                  <div className="text-sm text-slate-500">{connection.year}</div>
-                </div>
-              </div>
-            )) || <p className="text-slate-500">No lobbying connections found.</p>}
-          </TabsContent>
-
-          <TabsContent value="funding" className="space-y-4">
-            <h4 className="font-semibold">Campaign Funding Analysis</h4>
+          <TabsContent value="contact" className="space-y-4">
+            <h4 className="font-semibold text-slate-700">Contact Information</h4>
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span>Total Raised</span>
-                <span className="font-bold">{formatCurrency(candidate.fundraisingTotal || 0)}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span>Lobbying-Connected Funding</span>
-                <span className="font-bold text-red-600">
-                  {formatCurrency(candidate.lobbyingConnections?.reduce((sum, conn) => sum + conn.amount, 0) || 0)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span>Funding from Special Interests</span>
-                <span className="font-bold">
-                  {(
-                    ((candidate.lobbyingConnections?.reduce((sum, conn) => sum + conn.amount, 0) || 0) /
-                      (candidate.fundraisingTotal || 1)) *
-                    100
-                  ).toFixed(1)}
-                  %
-                </span>
+              {senator.contactInfo.dcOffice && (
+                <div className="flex items-start gap-3 p-3 border rounded-lg">
+                  <Building className="h-4 w-4 mt-1 text-slate-500" />
+                  <div>
+                    <div className="font-medium text-slate-700">Washington, DC Office</div>
+                    <div className="text-sm text-slate-600">{senator.contactInfo.dcOffice}</div>
+                    {senator.contactInfo.dcPhone && (
+                      <div className="text-sm text-slate-600">{senator.contactInfo.dcPhone}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {senator.contactInfo.stateOffices.map((office, index) => (
+                <div key={index} className="flex items-start gap-3 p-3 border rounded-lg">
+                  <Building className="h-4 w-4 mt-1 text-slate-500" />
+                  <div>
+                    <div className="font-medium text-slate-700">{office.city} Office</div>
+                    <div className="text-sm text-slate-600">{office.address}</div>
+                    <div className="text-sm text-slate-600">{office.phone}</div>
+                  </div>
+                </div>
+              ))}
+
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <ExternalLink className="h-4 w-4 text-slate-500" />
+                <div>
+                  <div className="font-medium text-slate-700">Official Website</div>
+                  <a
+                    href={senator.contactInfo.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    {senator.contactInfo.website}
+                  </a>
+                </div>
               </div>
             </div>
-
-            {candidate.isIncumbent && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <h5 className="font-semibold text-yellow-800 mb-2">Incumbent Advantage</h5>
-                <p className="text-yellow-700 text-sm">
-                  Incumbents typically raise 3-5x more than challengers due to name recognition and established donor
-                  networks. This funding advantage is one reason why Fresh 535 advocates for systematic replacement.
-                </p>
-              </div>
-            )}
           </TabsContent>
         </Tabs>
       </CardContent>
+    </Card>
+  )
+}
+
+function LocalOfficialCard({ official }: { official: LocalOfficial }) {
+  return (
+    <Card className="border-slate-200">
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center">
+            <span className="text-primary">{official.name}</span>
+            {official.isIncumbent && (
+              <Badge variant="outline" className="ml-2 border-slate-400 text-slate-700">
+                INCUMBENT
+              </Badge>
+            )}
+          </div>
+          {official.party && (
+            <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+              {official.party}
+            </Badge>
+          )}
+        </CardTitle>
+        <CardDescription>
+          {official.office} • {official.yearsInOffice} years in office
+        </CardDescription>
+      </CardHeader>
     </Card>
   )
 }

@@ -1,4 +1,5 @@
 import { ResourceCard, type Resource } from "@/components/resource-card"
+import { ShareButtons } from "@/components/share-buttons"
 
 const resources: Resource[] = [
   {
@@ -56,10 +57,18 @@ export default function ResourcesPage() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
           {resources.map((resource) => (
             <ResourceCard key={resource.title} resource={resource} />
           ))}
+        </div>
+
+        <div className="text-center bg-brand-navy text-white p-8 rounded-lg">
+          <h2 className="text-2xl font-bold mb-4">Share Fresh 535</h2>
+          <p className="text-lg mb-6 opacity-90">
+            Help spread the movement by sharing on social media and with your network.
+          </p>
+          <ShareButtons />
         </div>
       </div>
     </div>

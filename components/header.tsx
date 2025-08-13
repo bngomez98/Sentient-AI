@@ -4,13 +4,17 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Menu, X, Heart, Users } from "lucide-react"
+import { Menu, X, Heart, Users, LogIn, LogOut } from "lucide-react"
 import { Button } from "./ui/button"
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
+import type { User as SupabaseUser } from "@supabase/supabase-js"
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+  const [user, setUser] = useState<SupabaseUser | null>(null)
   const pathname = usePathname()
+  const supabase = createClient()
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10)
@@ -18,12 +22,45 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+  useEffect(() => {
+    if (!isSupabaseConfigured) {
+      return
+    }
+
+    const getUser = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        setUser(user)
+      } catch (error) {
+        console.warn("Failed to get user:", error)
+      }
+    }
+
+    getUser()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [supabase.auth])
+
+  const handleLogout = async () => {
+    if (isSupabaseConfigured) {
+      await supabase.auth.signOut()
+    }
+    setIsMobileMenuOpen(false)
+  }
+
   const navItems = [
     { href: "/", label: "Home" },
     { href: "/my-district", label: "My District" },
-    { href: "/analysis", label: "The Problem" },
+    { href: "/problem", label: "The Problem" },
     { href: "/solution", label: "The Solution" },
-    { href: "/data", label: "Data & Evidence" },
     { href: "/resources", label: "Resources" },
     { href: "/faq", label: "FAQ" },
   ]
@@ -78,6 +115,25 @@ export function Header() {
                 Take the Pledge
               </Link>
             </Button>
+            {isSupabaseConfigured ? (
+              user ? (
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-slate-600">{user.email?.split("@")[0]}</span>
+                  <Button variant="ghost" size="sm" onClick={handleLogout}>
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/auth/login">
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Login
+                  </Link>
+                </Button>
+              )
+            ) : (
+              <div className="text-xs text-slate-500">Auth unavailable</div>
+            )}
           </div>
 
           <button
@@ -118,6 +174,26 @@ export function Header() {
                   Take the Pledge
                 </Link>
               </Button>
+              {isSupabaseConfigured ? (
+                user ? (
+                  <div className="flex flex-col space-y-2">
+                    <div className="text-center text-sm text-slate-600">Logged in as {user.email?.split("@")[0]}</div>
+                    <Button variant="ghost" className="w-full" onClick={handleLogout}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Logout
+                    </Button>
+                  </div>
+                ) : (
+                  <Button variant="ghost" className="w-full" asChild>
+                    <Link href="/auth/login">
+                      <LogIn className="h-4 w-4 mr-2" />
+                      Login
+                    </Link>
+                  </Button>
+                )
+              ) : (
+                <div className="text-center text-xs text-slate-500">Authentication unavailable</div>
+              )}
             </div>
           </div>
         </div>

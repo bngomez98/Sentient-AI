@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { ShareButtons } from "@/components/share-buttons"
 
 export default function FAQPage() {
   return (
@@ -8,7 +9,7 @@ export default function FAQPage() {
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tighter mb-4">Frequently Asked Questions</h1>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">Frequently Asked Questions</h1>
             <p className="text-xl text-slate-600">
               Common questions about the Fresh 535 movement, strategy, and implementation.
             </p>
@@ -190,6 +191,14 @@ export default function FAQPage() {
             <Button asChild size="lg">
               <Link href="/contact">Contact Us</Link>
             </Button>
+          </div>
+
+          <div className="text-center mt-16 bg-brand-navy text-white p-8 rounded-lg">
+            <h2 className="text-2xl font-bold mb-4">Help Spread the Word</h2>
+            <p className="text-lg mb-6 opacity-90">
+              Share Fresh 535 with others who believe in congressional accountability.
+            </p>
+            <ShareButtons />
           </div>
         </div>
       </div>
