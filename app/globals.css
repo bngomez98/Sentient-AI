@@ -2,59 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-}
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    --background: 35 20% 96%; /* #f8f6f4 - Brand Cream */
+    --foreground: 240 10% 3.9%; /* #0a0a0a - Brand Charcoal */
+
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 240 10% 3.9%;
+
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
+    --popover-foreground: 240 10% 3.9%;
+
+    --primary: 222 47% 11%; /* #111827 - Brand Navy */
+    --primary-foreground: 35 20% 96%; /* Brand Cream for contrast */
+
+    --secondary: 220 13% 91%;
     --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221 83% 53%;
+
+    --muted: 220 13% 91%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 0 72% 51%; /* #e52222 - Brand Red */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 85%;
+    --input: 220 13% 85%;
+    --ring: 222 47% 11%;
+
     --radius: 0.5rem;
-  }
-  .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+
+    /* Custom Brand Colors */
+    --brand-cream: 35 20% 96%;
+    --brand-charcoal: 240 10% 3.9%;
+    --brand-navy: 222 47% 11%;
+    --brand-red: 0 72% 51%;
   }
 }
 
@@ -64,6 +48,56 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-inter);
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-playfair);
+    @apply font-bold text-primary;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  .prose {
+    @apply text-slate-700 max-w-none;
+  }
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4 {
+    @apply text-primary;
+  }
+  .prose a {
+    @apply text-accent hover:text-accent/80 font-semibold;
+  }
+  .prose strong {
+    @apply text-primary;
+  }
+  .prose blockquote {
+    @apply border-accent;
   }
 }
 
+@layer components {
+  .section-padding {
+    @apply py-20 md:py-28;
+  }
+  .container-padding {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+  .glass-header {
+    @apply bg-background/80 backdrop-blur-lg;
+  }
+  .text-gradient-red {
+    @apply bg-gradient-to-r from-red-600 to-red-800 text-transparent bg-clip-text;
+  }
+}
+
+::selection {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}

@@ -1,24 +1,30 @@
-# Sentient AI
+# fresh 535
 
-An advanced neural-symbolic AI assistant with contextual understanding and reasoning capabilities.
+*Automatically synced with your [v0.dev](https://v0.dev) deployments*
 
-## Features
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/bngomez/v0-image-analysis-c9)
+[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/Me9Wa7gviDn)
 
-- **Neural-Symbolic Architecture**: Combines symbolic reasoning with neural network understanding
-- **Contextual Understanding**: Uses VAE-LSTM model to extract deep contextual meaning
-- **Multi-Dataset Pretraining**: Leverages diverse datasets for enhanced knowledge
-- **Interactive UI**: Clean, responsive interface with reasoning visualization
+## Overview
 
-## Getting Started
+This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
+Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
 
-### Prerequisites
+## Deployment
 
-- Node.js 18+ and npm
-- Python 3.8+ with pip (for the VAE service)
+Your project is live at:
 
-### Installation
+**[https://vercel.com/bngomez/v0-image-analysis-c9](https://vercel.com/bngomez/v0-image-analysis-c9)**
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/sentient-ai.git
-   cd sentient-ai
+## Build your app
+
+Continue building your app on:
+
+**[https://v0.dev/chat/projects/Me9Wa7gviDn](https://v0.dev/chat/projects/Me9Wa7gviDn)**
+
+## How It Works
+
+1. Create and modify your project using [v0.dev](https://v0.dev)
+2. Deploy your chats from the v0 interface
+3. Changes are automatically pushed to this repository
+4. Vercel deploys the latest version from this repository
