@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     for (const msg of messages) {
-      if (!msg.role || !msg.content || typeof msg.content !== "string") {
+      if (!msg || typeof msg !== "object" || !msg.role || !msg.content || typeof msg.content !== "string") {
         return NextResponse.json(
           { error: "Each message must have a role and content string" },
           { status: 400 }
